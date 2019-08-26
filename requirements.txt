@@ -1,2 +1,6 @@
 signalfx_lambda>=0.1.0
 requests
+opentracing>=2.0,<2.1
+six>=1.12.0
+wrapt
+requests-opentracing
