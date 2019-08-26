@@ -14,11 +14,6 @@ $ pwd  # Confirm this is <your_local_path/tracing-examples/aws-lambda/jaeger-pyt
 $ pip install -r requirements.txt -t .
 $ find . -name "*.py[co]" -delete
 $ find . -name "*.dist-info" -exec rm -r "{}" \;
-$ # If you are running your Lambda function in the Python 3.6 runtime environment
-$ # you'll need to remove the concurrent package as its code is evaluated at load time
-$ # and raises a SyntaxError for using the obsoleted raise Exception tuple syntax.  This
-$ # is part of the standard library for Python 3.2+ so is not necessary.
-$ # rm -rf ./concurrent
 $ zip -r my_traced_python_lambda.zip *
 ```
 
@@ -31,10 +26,19 @@ event:
 
 ```
 {
-  "queryStringParameters": {
-    "choice": "00"
-  }
+  "url": "https://www.signalfx.com",
+  "method": "GET",
+  "headers": {},
+  "body": "{\"abc\":\"def\"}"
 }
 ```
 
-
+To inject a trace object to the underlying flask server, you need to set the url to be `http://trace.com`
+```
+{
+  "url": "http://trace.com",
+  "method": "POST",
+  "headers": {},
+  "body": "{\"abc\":\"def\"}"
+}
+```
