@@ -28,15 +28,15 @@ class InjectTrace(object):
 
 			response = {}
 			if event['method'].upper().decode('utf-8','ignore') == 'POST':
-				resp = traced_session.post(event['url'],headers=event['headers'],body=event['body'])
+				resp = traced_session.post(event['url'],headers=event['headers'],data=event['body'])
 				response['responseCode']=resp.status_code
 				response['elapsedTime']=resp.elapsed.total_seconds()*1000
 			elif event['method'].upper().decode('utf-8','ignore') == 'GET' or event['method'].decode('utf-8','ignore') == '':
-				resp = traced_session.get(event['url'])
+				resp = traced_session.get(event['url'],headers=event['headers'])
 				response['responseCode']=resp.status_code
 				response['elapsedTime']=resp.elapsed.total_seconds()*1000
 			else:
-				response = '{"error":true}'
+				response['error'] = True
 
 		return response
 
@@ -46,15 +46,10 @@ class InjectTrace(object):
 # SignalFx Lambda wrapper
 @signalfx_lambda.is_traced
 def request_handler(event, context):
-	if not 'url' in event:
-		return '{"message":"Url missing"}',500
-	if not 'method' in event:
-		return '{"message":"method type GET/PUT etc is missing"}',500
-	if not 'headers' in event:
-		return '{"message":"Headers are missing"}',500
-	if not 'body' in event:
-		return '{"message":"Message body is missing"}',500
-
+	response = {}
+	response['error']=True
+	if not ('url' in event) or not ('method' in event) or not ('headers' in event) or not ('body' in event):
+		return response
 	
 	testTrace = InjectTrace()
 	return testTrace.trace_request(event,context)	
