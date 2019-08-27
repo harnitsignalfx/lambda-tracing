@@ -21,32 +21,25 @@ class InjectTrace(object):
 			requests_config.propagate = True
 			requests_config.tracer = self.tracer
 
-			auto_instrument()  # or instrument(requests=True)
+			auto_instrument()
 			traced_session = requests.Session()
-			traced_post_response = traced_session.post("http://35.236.100.236:6000/echo")
-			#response = requests.post("http://35.236.100.236:6000/echo")
 
-			print ('response->',traced_post_response)
+			#traced_post_response = traced_session.post("http://35.236.100.236:6000/echo")
 
-			response['responseCode']=traced_post_response.status_code
-			response['elapsedTime']=traced_post_response.elapsed.total_seconds()
+			response = {}
+			if event['method'].upper().decode('utf-8','ignore') == 'POST':
+				resp = traced_session.post(event['url'],headers=event['headers'],body=event['body'])
+				response['responseCode']=resp.status_code
+				response['elapsedTime']=resp.elapsed.total_seconds()*1000
+			elif event['method'].upper().decode('utf-8','ignore') == 'GET' or event['method'].decode('utf-8','ignore') == '':
+				resp = traced_session.get(event['url'])
+				response['responseCode']=resp.status_code
+				response['elapsedTime']=resp.elapsed.total_seconds()*1000
+			else:
+				response = '{"error":true}'
 
 		return response
 
-
-def regular_request(event,context):
-	response = {}
-	if event['method'].upper().decode('utf-8','ignore') == 'POST':
-		resp = requests.post(event['url'],headers=event['headers'],body=event['body'])
-		response['responseCode']=resp.status_code
-		response['elapsedTime']=resp.elapsed.total_seconds()
-	elif event['method'].upper().decode('utf-8','ignore') == 'GET' or event['method'].decode('utf-8','ignore') == '':
-		resp = requests.get(event['url'])
-		response['responseCode']=resp.status_code
-		response['elapsedTime']=resp.elapsed.total_seconds()
-	else:
-		response = '{"message":"Request Type is unsupported (Only GET/POST is supported)","responseCode":404,"elapsedTime":"0"}'
-	return response
 
 
 # Our registered Lambda handler entrypoint (example.request_handler) with the
@@ -62,8 +55,6 @@ def request_handler(event, context):
 	if not 'body' in event:
 		return '{"message":"Message body is missing"}',500
 
-	if event['url'] == 'http://trace.com':
-		testTrace = InjectTrace()
-		return testTrace.trace_request(event,context)	
-	else:
-		return regular_request(event,context)
+	
+	testTrace = InjectTrace()
+	return testTrace.trace_request(event,context)	
